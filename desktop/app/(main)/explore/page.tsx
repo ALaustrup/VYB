@@ -1,11 +1,18 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 type SearchGroups = {
   people: Array<{ id: string; username: string; displayName: string; bio: string | null }>;
-  posts: Array<{ id: string; content: string; createdAt: string; author: string | null }>;
+  posts: Array<{
+    id: string;
+    content: string;
+    createdAt: string;
+    author: string | null;
+    authorUsername?: string;
+  }>;
   interests: Array<{ id: string; slug: string; name: string; category: string }>;
 };
 
@@ -68,9 +75,14 @@ export default function ExplorePage() {
               <ul className="grid gap-2">
                 {data?.people.map((p) => (
                   <li key={p.id} className="glass-panel p-4 text-sm text-white/90">
-                    <p className="font-medium text-white">{p.displayName}</p>
-                    <p className="text-white/55">@{p.username}</p>
-                    {p.bio ? <p className="mt-1 text-white/75">{p.bio}</p> : null}
+                    <Link
+                      href={`/profile/${encodeURIComponent(p.username)}`}
+                      className="block rounded-lg outline-none hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-white/40"
+                    >
+                      <p className="font-medium text-white">{p.displayName}</p>
+                      <p className="text-white/55">@{p.username}</p>
+                      {p.bio ? <p className="mt-1 text-white/75">{p.bio}</p> : null}
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -84,7 +96,18 @@ export default function ExplorePage() {
               <ul className="grid gap-2">
                 {data?.posts.map((post) => (
                   <li key={post.id} className="glass-panel p-4 text-sm text-white/90">
-                    <p className="text-white/55">{post.author}</p>
+                    <p className="text-white/55">
+                      {post.authorUsername ? (
+                        <Link
+                          href={`/profile/${encodeURIComponent(post.authorUsername)}`}
+                          className="hover:text-white"
+                        >
+                          {post.author}
+                        </Link>
+                      ) : (
+                        post.author
+                      )}
+                    </p>
                     <p className="mt-1">{post.content}</p>
                   </li>
                 ))}

@@ -64,6 +64,7 @@ export async function searchAll(q: string) {
       content: row.content,
       createdAt: row.createdAt.toISOString(),
       author: row.authorName ?? row.authorUsername,
+      authorUsername: row.authorUsername,
     })),
     interests: interestRows,
   };

@@ -1,10 +1,12 @@
- "use client";
+"use client";
 
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 
 type FeedPost = {
   id: string;
   author: string;
+  authorUsername?: string;
   content: string;
   createdAt?: string;
 };
@@ -49,7 +51,18 @@ export function FeedList() {
     <div className="grid gap-4">
       {posts.map((item) => (
         <article key={item.id} className="glass-panel p-5">
-          <p className="text-sm text-white/60">{item.author}</p>
+          <p className="text-sm text-white/60">
+            {item.authorUsername ? (
+              <Link
+                href={`/profile/${encodeURIComponent(item.authorUsername)}`}
+                className="hover:text-white"
+              >
+                {item.author}
+              </Link>
+            ) : (
+              item.author
+            )}
+          </p>
           <p className="mt-2 text-white/90">{item.content}</p>
         </article>
       ))}

@@ -8,8 +8,18 @@ const querySchema = z.object({
 });
 
 const samplePosts = [
-  { id: "1", author: "Avery", content: "Hosting a spontaneous sunset walk at 7pm." },
-  { id: "2", author: "Mina", content: "Looking to trade guitar basics for cooking lessons." },
+  {
+    id: "1",
+    author: "Avery",
+    authorUsername: "avery",
+    content: "Hosting a spontaneous sunset walk at 7pm.",
+  },
+  {
+    id: "2",
+    author: "Mina",
+    authorUsername: "mina",
+    content: "Looking to trade guitar basics for cooking lessons.",
+  },
 ];
 
 export async function GET(request: Request) {

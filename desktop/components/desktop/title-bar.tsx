@@ -2,10 +2,14 @@
 
 import { UserButton, useUser } from "@clerk/nextjs";
 import Link from "next/link";
-import { Compass, Home, Minus, Square, X } from "lucide-react";
+import { Compass, Home, Minus, Square, UserCircle, X } from "lucide-react";
 
 export function DesktopTitleBar() {
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
+  const profileHref =
+    user?.username && user.username.trim().length > 0
+      ? `/profile/${encodeURIComponent(user.username)}`
+      : null;
 
   return (
     <header className="glass-panel sticky top-0 z-50 flex h-12 items-center justify-between border-b border-white/20 px-4">
@@ -31,6 +35,14 @@ export function DesktopTitleBar() {
             <Link className="rounded-full px-2 py-1 hover:bg-white/10" href="/notifications">
               Alerts
             </Link>
+            {profileHref ? (
+              <Link className="rounded-full px-2 py-1 hover:bg-white/10" href={profileHref}>
+                <span className="inline-flex items-center gap-1">
+                  <UserCircle className="h-3.5 w-3.5" aria-hidden />
+                  Profile
+                </span>
+              </Link>
+            ) : null}
           </nav>
         ) : null}
       </div>

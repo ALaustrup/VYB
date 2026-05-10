@@ -13,6 +13,7 @@ export async function getFeedPage({ cursor, limit }: { cursor?: string; limit: n
       content: posts.content,
       createdAt: posts.createdAt,
       author: users.displayName,
+      authorUsername: users.username,
     })
     .from(posts)
     .innerJoin(users, eq(posts.authorId, users.id))
@@ -29,6 +30,7 @@ export async function getFeedPage({ cursor, limit }: { cursor?: string; limit: n
       id: row.id,
       content: row.content,
       author: row.author ?? "Vyb Member",
+      authorUsername: row.authorUsername,
       createdAt: row.createdAt.toISOString(),
     })),
     nextCursor,
