@@ -20,6 +20,7 @@ export default function VibeQuizPage() {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const isLastStep = step === questions.length - 1;
   const current = questions[step];
@@ -27,18 +28,34 @@ export default function VibeQuizPage() {
   if (!current) return null;
 
   async function handleContinue() {
+    const selected = answers[current!.id];
+    if (!selected) return;
+
+    const merged = { ...answers, [current!.id]: selected };
+
     if (!isLastStep) {
+      setAnswers(merged);
       setStep((prev) => prev + 1);
+      setError(null);
       return;
     }
+
     setIsSaving(true);
+    setError(null);
     try {
-      await fetch("/api/onboarding", {
+      const res = await fetch("/api/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ vibeQuizAnswers: answers }),
+        body: JSON.stringify({ vibeQuizAnswers: merged }),
       });
+      const json = (await res.json().catch(() => null)) as { ok?: boolean; error?: string };
+      if (!res.ok || !json?.ok) {
+        setError(json?.error ?? "Could not save your vibe. Try again.");
+        return;
+      }
       router.push("/onboarding/setup-profile");
+    } catch {
+      setError("Network error — check your connection and try again.");
     } finally {
       setIsSaving(false);
     }
@@ -59,13 +76,21 @@ export default function VibeQuizPage() {
             <button
               key={option}
               type="button"
-              onClick={() => setAnswers((prev) => ({ ...prev, [current.id]: option }))}
-              className="glass-panel p-4 text-left text-white/90"
+              onClick={() => {
+                setAnswers((prev) => ({ ...prev, [current.id]: option }));
+                setError(null);
+              }}
+              className={`glass-panel p-4 text-left transition ${
+                answers[current.id] === option
+                  ? "ring-2 ring-white/60 bg-white/15 text-white"
+                  : "text-white/90 hover:bg-white/10"
+              }`}
             >
               {option}
             </button>
           ))}
         </div>
+        {error ? <p className="mt-4 text-sm text-[var(--vyb-sunset)]">{error}</p> : null}
         <div className="mt-6 flex justify-end">
           <button
             type="button"

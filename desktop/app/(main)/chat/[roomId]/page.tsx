@@ -70,7 +70,10 @@ export default function ChatRoomPage() {
   const items = messages.data?.data ?? [];
 
   return (
-    <section className="mx-auto flex h-[calc(100vh-3rem)] max-w-2xl flex-col p-4">
+    <section className="mx-auto flex h-[calc(100vh-6rem)] max-w-2xl flex-col gap-2 p-4 pb-28">
+      <div className="glass-panel border border-white/15 p-3 text-xs text-white/65">
+        Live video for match and cam rooms — WebRTC connects in the next release. Text chat works now.
+      </div>
       <div className="glass-panel flex flex-1 flex-col overflow-hidden">
         <div className="flex-1 space-y-2 overflow-y-auto p-4">
           {items.map((m) => (

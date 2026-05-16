@@ -44,6 +44,14 @@ export const users = pgTable(
     vibeQuizAnswers: jsonb("vibe_quiz_answers").$type<Record<string, string>>(),
     interestsSummary: text("interests_summary").array().notNull().default([]),
     privacyLevel: privacyEnum("privacy_level").notNull().default("public"),
+    profileTheme: jsonb("profile_theme").$type<{
+      accent?: string;
+      tagline?: string;
+      layout?: "classic" | "compact";
+    }>(),
+    shareLocation: boolean("share_location").notNull().default(false),
+    latitude: text("latitude"),
+    longitude: text("longitude"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -150,6 +158,15 @@ export const notifications = pgTable(
 );
 
 export const chatRoomTypeEnum = pgEnum("chat_room_type", ["direct", "group"]);
+export const chatModeEnum = pgEnum("chat_mode", [
+  "direct",
+  "group",
+  "local",
+  "world",
+  "webcam",
+  "random_cam",
+  "match_private",
+]);
 export const messageTypeEnum = pgEnum("message_type", ["text", "image", "system"]);
 export const eventTypeEnum = pgEnum("event_type", ["spontaneous", "scheduled", "recurring", "virtual"]);
 export const rsvpStatusEnum = pgEnum("rsvp_status", ["going", "interested", "not_going", "host"]);
@@ -160,11 +177,42 @@ export const chatRooms = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     type: chatRoomTypeEnum("type").notNull().default("direct"),
+    mode: chatModeEnum("mode").notNull().default("direct"),
     name: text("name"),
+    hostId: uuid("host_id").references(() => users.id, { onDelete: "set null" }),
+    settings: jsonb("settings").$type<{
+      privacy?: "public" | "friends" | "invite";
+      allowWebcam?: boolean;
+      allowMic?: boolean;
+      radiusKm?: number;
+      description?: string;
+    }>(),
+    latitude: text("latitude"),
+    longitude: text("longitude"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index("chat_rooms_updated_idx").on(table.updatedAt)],
+  (table) => [
+    index("chat_rooms_updated_idx").on(table.updatedAt),
+    index("chat_rooms_mode_idx").on(table.mode),
+  ],
+);
+
+export const matchmakingSessions = pgTable(
+  "matchmaking_sessions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    answers: jsonb("answers").$type<Record<string, string>>().notNull().default({}),
+    status: text("status").notNull().default("in_progress"),
+    matchedUserId: uuid("matched_user_id").references(() => users.id, { onDelete: "set null" }),
+    roomId: uuid("room_id").references(() => chatRooms.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("matchmaking_user_idx").on(table.userId)],
 );
 
 export const chatRoomMembers = pgTable(

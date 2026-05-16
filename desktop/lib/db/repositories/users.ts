@@ -86,6 +86,10 @@ export async function updateProfileSettings(
     avatarUrl?: string;
     privacyLevel?: "public" | "friends" | "private";
     interestSlugs?: string[];
+    profileTheme?: { accent?: string; tagline?: string; layout?: "classic" | "compact" };
+    shareLocation?: boolean;
+    latitude?: string;
+    longitude?: string;
   },
 ) {
   const db = getDb();
@@ -105,6 +109,10 @@ export async function updateProfileSettings(
       bio: payload.bio ?? user.bio ?? undefined,
       avatarUrl: payload.avatarUrl ?? user.avatarUrl ?? undefined,
       privacyLevel: payload.privacyLevel ?? user.privacyLevel,
+      profileTheme: payload.profileTheme ?? user.profileTheme ?? undefined,
+      shareLocation: payload.shareLocation ?? user.shareLocation,
+      latitude: payload.latitude ?? user.latitude ?? undefined,
+      longitude: payload.longitude ?? user.longitude ?? undefined,
       interestsSummary: normalizedInterestSlugs ?? user.interestsSummary,
       updatedAt: new Date(),
     })

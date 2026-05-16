@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/app-providers";
 import { DesktopTitleBar } from "@/components/desktop/title-bar";
+import { IconDock } from "@/components/navigation/icon-dock";
 import { env } from "@/lib/env";
 
 const geistSans = Geist({
@@ -38,7 +39,8 @@ export default function RootLayout({
           <AppProviders>
             <div className="desktop-shell">
               <DesktopTitleBar />
-              <main className="flex-1 overflow-y-auto">{children}</main>
+              <main className="flex-1 overflow-y-auto pb-24">{children}</main>
+              <IconDock />
             </div>
           </AppProviders>
         </ClerkProvider>

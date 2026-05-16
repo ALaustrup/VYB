@@ -54,8 +54,21 @@ export function FeedList() {
         <article className="glass-panel p-8 text-center">
           <h2 className="text-xl font-semibold text-white">Your feed is calm right now</h2>
           <p className="mt-2 text-white/70">
-            {filter === "following" ? "Follow people to see their posts here." : "Create your first Vyb post."}
+            {filter === "following"
+              ? "Follow people to see their posts here."
+              : "Meet others on Vyb — explore, match, or say hello."}
           </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
+            <Link href="/explore" className="rounded-full bg-white px-4 py-2 text-sm font-medium text-black">
+              Explore people
+            </Link>
+            <Link href="/chat/matchmaker" className="rounded-full border border-white/25 px-4 py-2 text-sm text-white/85">
+              Vyb Match
+            </Link>
+            <Link href="/chat" className="rounded-full border border-white/25 px-4 py-2 text-sm text-white/85">
+              Connect hub
+            </Link>
+          </div>
         </article>
       ) : (
         (data?.data.posts ?? []).map((item) => (

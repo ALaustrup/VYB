@@ -11,6 +11,16 @@ const patchSchema = z.object({
   avatarUrl: z.string().url().max(500).optional().or(z.literal("")),
   privacyLevel: z.enum(["public", "friends", "private"]).optional(),
   interestSlugs: z.array(z.string().trim().min(1).max(40)).max(12).optional(),
+  profileTheme: z
+    .object({
+      accent: z.string().max(40).optional(),
+      tagline: z.string().max(120).optional(),
+      layout: z.enum(["classic", "compact"]).optional(),
+    })
+    .optional(),
+  shareLocation: z.boolean().optional(),
+  latitude: z.string().max(32).optional(),
+  longitude: z.string().max(32).optional(),
 });
 
 export async function GET() {

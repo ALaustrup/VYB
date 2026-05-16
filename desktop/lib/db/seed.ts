@@ -2,6 +2,7 @@ import "../bootstrap-env";
 
 import { and, eq } from "drizzle-orm";
 
+import { createSocialRoom } from "./repositories/chat";
 import { getDb } from "./client";
 import { interests, notifications, posts, users } from "./schema";
 
@@ -63,6 +64,19 @@ async function seed() {
   }
 
   if (avery) {
+    await createSocialRoom({
+      hostId: avery.id,
+      mode: "world",
+      name: "Vyb World Lounge",
+      settings: { privacy: "public", description: "Global hangout — say hi to the community." },
+    });
+    await createSocialRoom({
+      hostId: avery.id,
+      mode: "local",
+      name: "Nearby Vyb (demo)",
+      settings: { privacy: "public", radiusKm: 50, description: "Sample local room for distance-based chat." },
+    });
+
     const existingWelcome = await db.query.notifications.findFirst({
       where: and(eq(notifications.userId, avery.id), eq(notifications.title, "Welcome to Vyb")),
     });

@@ -3,7 +3,16 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import { getDb } from "@/lib/db/client";
 import { chatRoomMembers, chatRooms, messages, users } from "@/lib/db/schema";
 
-export async function listRoomsForUser(userId: string) {
+export type ChatMode =
+  | "direct"
+  | "group"
+  | "local"
+  | "world"
+  | "webcam"
+  | "random_cam"
+  | "match_private";
+
+export async function listRoomsForUser(userId: string, modeFilter?: ChatMode) {
   const db = getDb();
   if (!db) return null;
 
@@ -18,7 +27,11 @@ export async function listRoomsForUser(userId: string) {
   const rooms = await db
     .select()
     .from(chatRooms)
-    .where(inArray(chatRooms.id, roomIds))
+    .where(
+      modeFilter
+        ? and(inArray(chatRooms.id, roomIds), eq(chatRooms.mode, modeFilter))
+        : inArray(chatRooms.id, roomIds),
+    )
     .orderBy(desc(chatRooms.updatedAt));
 
   const enriched = [];
@@ -36,12 +49,92 @@ export async function listRoomsForUser(userId: string) {
     const peer = members.find((m) => m.userId !== userId);
     enriched.push({
       ...room,
-      peerName: peer?.displayName ?? peer?.username ?? "Chat",
+      peerName: peer?.displayName ?? peer?.username ?? room.name ?? "Chat",
       peerUsername: peer?.username ?? null,
+      memberCount: members.length,
     });
   }
 
   return enriched;
+}
+
+export async function listPublicRoomsByMode(mode: ChatMode, limit = 20) {
+  const db = getDb();
+  if (!db) return null;
+
+  const rooms = await db
+    .select()
+    .from(chatRooms)
+    .where(eq(chatRooms.mode, mode))
+    .orderBy(desc(chatRooms.updatedAt))
+    .limit(limit);
+
+  const enriched = [];
+  for (const room of rooms) {
+    const members = await db
+      .select({ userId: chatRoomMembers.userId })
+      .from(chatRoomMembers)
+      .where(eq(chatRoomMembers.roomId, room.id));
+    enriched.push({ ...room, memberCount: members.length });
+  }
+  return enriched;
+}
+
+export async function createSocialRoom(input: {
+  hostId: string;
+  mode: ChatMode;
+  name?: string;
+  memberIds?: string[];
+  settings?: {
+    privacy?: "public" | "friends" | "invite";
+    allowWebcam?: boolean;
+    allowMic?: boolean;
+    radiusKm?: number;
+    description?: string;
+  };
+  latitude?: string;
+  longitude?: string;
+}) {
+  const db = getDb();
+  if (!db) return null;
+
+  const type = input.mode === "direct" || input.mode === "match_private" ? "direct" : "group";
+  const [room] = await db
+    .insert(chatRooms)
+    .values({
+      type,
+      mode: input.mode,
+      name: input.name,
+      hostId: input.hostId,
+      settings: input.settings,
+      latitude: input.latitude,
+      longitude: input.longitude,
+    })
+    .returning();
+
+  if (!room) return null;
+
+  const memberSet = new Set([input.hostId, ...(input.memberIds ?? [])]);
+  await db.insert(chatRoomMembers).values(
+    [...memberSet].map((userId) => ({ roomId: room.id, userId })),
+  );
+
+  return room;
+}
+
+export async function joinPublicRoom(roomId: string, userId: string) {
+  const db = getDb();
+  if (!db) return { error: "no_db" as const };
+
+  const [room] = await db.select().from(chatRooms).where(eq(chatRooms.id, roomId)).limit(1);
+  if (!room) return { error: "not_found" as const };
+
+  await db
+    .insert(chatRoomMembers)
+    .values({ roomId, userId })
+    .onConflictDoNothing();
+
+  return { data: room };
 }
 
 export async function getOrCreateDirectRoom(userA: string, userB: string) {
@@ -59,19 +152,18 @@ export async function getOrCreateDirectRoom(userA: string, userB: string) {
       .from(chatRoomMembers)
       .where(eq(chatRoomMembers.roomId, roomId));
     const ids = members.map((m) => m.userId).sort();
-    if (ids.length === 2 && ids[0] === [userA, userB].sort()[0] && ids[1] === [userA, userB].sort()[1]) {
+    const sorted = [userA, userB].sort();
+    if (ids.length === 2 && ids[0] === sorted[0] && ids[1] === sorted[1]) {
       const [room] = await db.select().from(chatRooms).where(eq(chatRooms.id, roomId)).limit(1);
       return room ?? null;
     }
   }
 
-  const [room] = await db.insert(chatRooms).values({ type: "direct" }).returning();
-  if (!room) return null;
-  await db.insert(chatRoomMembers).values([
-    { roomId: room.id, userId: userA },
-    { roomId: room.id, userId: userB },
-  ]);
-  return room;
+  return createSocialRoom({
+    hostId: userA,
+    mode: "direct",
+    memberIds: [userB],
+  });
 }
 
 export async function listMessages(roomId: string, limit = 50) {
@@ -137,4 +229,11 @@ export async function isRoomMember(roomId: string, userId: string) {
     .where(and(eq(chatRoomMembers.roomId, roomId), eq(chatRoomMembers.userId, userId)))
     .limit(1);
   return Boolean(row);
+}
+
+export async function getRoomById(roomId: string) {
+  const db = getDb();
+  if (!db) return null;
+  const [room] = await db.select().from(chatRooms).where(eq(chatRooms.id, roomId)).limit(1);
+  return room ?? null;
 }
