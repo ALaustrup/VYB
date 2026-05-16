@@ -1,3 +1,5 @@
+import "../bootstrap-env";
+
 import { and, eq } from "drizzle-orm";
 
 import { getDb } from "./client";

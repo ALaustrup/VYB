@@ -1,9 +1,10 @@
-import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import "../lib/bootstrap-env";
 
-const required = ["DATABASE_URL", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY"] as const;
+const required = ["DATABASE_URL"] as const;
 
 const recommended = [
+  "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+  "CLERK_SECRET_KEY",
   "CLERK_WEBHOOK_SECRET",
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
@@ -11,28 +12,11 @@ const recommended = [
   "UPSTASH_REDIS_REST_TOKEN",
 ] as const;
 
-function loadEnvLocal() {
-  const path = resolve(process.cwd(), ".env.local");
-  if (!existsSync(path)) {
-    console.error("Missing .env.local — copy .env.example to .env.local first.");
+function main() {
+  if (!process.env.DATABASE_URL?.trim()) {
+    console.error("Missing .env.local — copy .env.example to .env.local and set DATABASE_URL.");
     process.exit(1);
   }
-  for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eqIdx = trimmed.indexOf("=");
-    if (eqIdx === -1) continue;
-    const key = trimmed.slice(0, eqIdx).trim();
-    let value = trimmed.slice(eqIdx + 1).trim();
-    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
-      value = value.slice(1, -1);
-    }
-    if (!process.env[key]) process.env[key] = value;
-  }
-}
-
-function main() {
-  loadEnvLocal();
 
   let failed = false;
   for (const key of required) {
@@ -52,6 +36,12 @@ function main() {
   }
 
   if (failed) process.exit(1);
+  const hasClerk =
+    Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim()) &&
+    Boolean(process.env.CLERK_SECRET_KEY?.trim());
+  if (!hasClerk) {
+    console.warn("\n○ Clerk keys unset — npm run dev still works via Clerk keyless mode.");
+  }
   console.log("\nEnvironment looks ready for npm run db:migrate and npm run dev:desktop.");
 }
 

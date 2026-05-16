@@ -20,7 +20,11 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx lib/db/seed.ts",
-    "verify:env": "tsx scripts/verify-env.ts"
+    "verify:env": "tsx scripts/verify-env.ts",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:setup": "npm run db:up && npm run db:migrate && npm run db:seed",
+    "db:check": "tsx scripts/check-db.ts"
   },
   "lint-staged": {
     "*.{ts,tsx,js,mjs,json,css,md}": [

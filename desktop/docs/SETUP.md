@@ -14,10 +14,16 @@ Recommended: Clerk webhook secret, Supabase URL/anon key (chat Realtime), Upstas
 
 ## 2. Database
 
+**Local Postgres (Docker):**
+
 ```bash
+npm run db:up      # starts postgres on localhost:5432 (vyb/vyb/vyb)
 npm run db:migrate
 npm run db:seed
+# or: npm run db:setup
 ```
+
+Set `DATABASE_URL=postgresql://vyb:vyb@localhost:5432/vyb` in `.env.local` (default in template after `cp .env.example`).
 
 ## 3. Clerk webhook
 
