@@ -2,7 +2,7 @@
 
 import { UserButton, useUser } from "@clerk/nextjs";
 import Link from "next/link";
-import { Compass, Home, Minus, Square, UserCircle, X } from "lucide-react";
+import { Calendar, Compass, Home, MessageCircle, Minus, Square, UserCircle, X } from "lucide-react";
 
 export function DesktopTitleBar() {
   const { isSignedIn, user } = useUser();
@@ -30,6 +30,18 @@ export function DesktopTitleBar() {
               <span className="inline-flex items-center gap-1">
                 <Compass className="h-3.5 w-3.5" aria-hidden />
                 Explore
+              </span>
+            </Link>
+            <Link className="rounded-full px-2 py-1 hover:bg-white/10" href="/chat">
+              <span className="inline-flex items-center gap-1">
+                <MessageCircle className="h-3.5 w-3.5" aria-hidden />
+                Chat
+              </span>
+            </Link>
+            <Link className="rounded-full px-2 py-1 hover:bg-white/10" href="/events">
+              <span className="inline-flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5" aria-hidden />
+                Events
               </span>
             </Link>
             <Link className="rounded-full px-2 py-1 hover:bg-white/10" href="/notifications">

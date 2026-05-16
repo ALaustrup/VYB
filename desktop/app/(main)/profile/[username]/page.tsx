@@ -2,6 +2,8 @@ import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ProfileHeaderActions } from "@/components/profile/profile-header-actions";
+import { ProfilePosts } from "@/components/profile/profile-posts";
 import { getPublicProfile } from "@/lib/db/repositories/profile";
 
 type PageProps = { params: Promise<{ username: string }> };
@@ -102,22 +104,12 @@ export default async function ProfilePage({ params }: PageProps) {
             </div>
           </div>
         ) : null}
+        <ProfileHeaderActions username={profile.username} isOwner={profile.isViewerOwner} />
       </article>
 
       <div>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-white/55">Recent posts</h2>
-        {profile.recentPosts.length === 0 ? (
-          <article className="glass-panel p-8 text-center text-sm text-white/65">No posts yet.</article>
-        ) : (
-          <ul className="grid gap-3">
-            {profile.recentPosts.map((post) => (
-              <li key={post.id} className="glass-panel p-5">
-                <p className="text-xs text-white/45">{new Date(post.createdAt).toLocaleString()}</p>
-                <p className="mt-2 text-sm text-white/90">{post.content}</p>
-              </li>
-            ))}
-          </ul>
-        )}
+        <ProfilePosts posts={profile.recentPosts} />
       </div>
     </section>
   );

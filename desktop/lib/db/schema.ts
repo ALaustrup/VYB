@@ -148,3 +148,115 @@ export const notifications = pgTable(
   },
   (table) => [index("notifications_user_read_created_idx").on(table.userId, table.isRead, table.createdAt)],
 );
+
+export const chatRoomTypeEnum = pgEnum("chat_room_type", ["direct", "group"]);
+export const messageTypeEnum = pgEnum("message_type", ["text", "image", "system"]);
+export const eventTypeEnum = pgEnum("event_type", ["spontaneous", "scheduled", "recurring", "virtual"]);
+export const rsvpStatusEnum = pgEnum("rsvp_status", ["going", "interested", "not_going", "host"]);
+export const reportTargetEnum = pgEnum("report_target", ["user", "post", "comment", "listing", "event"]);
+
+export const chatRooms = pgTable(
+  "chat_rooms",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    type: chatRoomTypeEnum("type").notNull().default("direct"),
+    name: text("name"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("chat_rooms_updated_idx").on(table.updatedAt)],
+);
+
+export const chatRoomMembers = pgTable(
+  "chat_room_members",
+  {
+    roomId: uuid("room_id")
+      .notNull()
+      .references(() => chatRooms.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    joinedAt: timestamp("joined_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.roomId, table.userId] })],
+);
+
+export const messages = pgTable(
+  "messages",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    roomId: uuid("room_id")
+      .notNull()
+      .references(() => chatRooms.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: messageTypeEnum("type").notNull().default("text"),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("messages_room_created_idx").on(table.roomId, table.createdAt)],
+);
+
+export const events = pgTable(
+  "events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    hostId: uuid("host_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    description: text("description"),
+    type: eventTypeEnum("type").notNull().default("spontaneous"),
+    location: jsonb("location").$type<{
+      type: "physical" | "virtual";
+      address?: string;
+      lat?: number;
+      lng?: number;
+      virtualLink?: string;
+    }>(),
+    startTime: timestamp("start_time", { withTimezone: true }).notNull(),
+    endTime: timestamp("end_time", { withTimezone: true }),
+    isNow: boolean("is_now").notNull().default(false),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    maxAttendees: integer("max_attendees"),
+    currentAttendees: integer("current_attendees").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("events_host_idx").on(table.hostId),
+    index("events_start_idx").on(table.startTime),
+    index("events_is_now_idx").on(table.isNow),
+  ],
+);
+
+export const eventAttendees = pgTable(
+  "event_attendees",
+  {
+    eventId: uuid("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: rsvpStatusEnum("status").notNull().default("interested"),
+    rsvpAt: timestamp("rsvp_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.eventId, table.userId] })],
+);
+
+export const safetyReports = pgTable(
+  "safety_reports",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    reporterId: uuid("reporter_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    targetType: reportTargetEnum("target_type").notNull(),
+    targetId: uuid("target_id").notNull(),
+    reason: text("reason").notNull(),
+    details: text("details"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("safety_reports_target_idx").on(table.targetType, table.targetId)],
+);

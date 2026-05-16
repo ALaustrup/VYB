@@ -1,10 +1,15 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+
+import { ensureCurrentUserSynced } from "@/lib/auth/ensure-user";
 import { getFeedPage } from "@/lib/db/repositories/posts";
+import { getUserByClerkId } from "@/lib/db/repositories/users";
 
 const querySchema = z.object({
   cursor: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(30).default(10),
+  filter: z.enum(["all", "following"]).default("all"),
 });
 
 const samplePosts = [
@@ -36,7 +41,20 @@ export async function GET(request: Request) {
     );
   }
 
-  const dbFeed = await getFeedPage({ cursor: parsed.data.cursor, limit: parsed.data.limit });
+  const { userId } = await auth();
+  let viewerUserId: string | undefined;
+  if (parsed.data.filter === "following" && userId) {
+    await ensureCurrentUserSynced();
+    const viewer = await getUserByClerkId(userId);
+    viewerUserId = viewer?.id;
+  }
+
+  const dbFeed = await getFeedPage({
+    cursor: parsed.data.cursor,
+    limit: parsed.data.limit,
+    filter: parsed.data.filter,
+    viewerUserId,
+  });
   if (dbFeed) {
     return NextResponse.json({ ok: true, data: dbFeed, source: "database" });
   }

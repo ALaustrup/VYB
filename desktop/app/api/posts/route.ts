@@ -5,6 +5,7 @@ import { z } from "zod";
 import { ensureCurrentUserSynced } from "@/lib/auth/ensure-user";
 import { getDb } from "@/lib/db/client";
 import { posts, users } from "@/lib/db/schema";
+import { rateLimit } from "@/lib/rate-limit";
 
 const createPostSchema = z.object({
   content: z.string().trim().min(1).max(500),
@@ -16,6 +17,11 @@ export async function POST(request: Request) {
   if (!userId) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
+  const limited = await rateLimit("post", userId, { limit: 20, windowMs: 60_000 });
+  if (!limited.success) {
+    return NextResponse.json({ ok: false, error: "Rate limit exceeded" }, { status: 429 });
+  }
+
   await ensureCurrentUserSynced();
 
   const body = await request.json().catch(() => null);

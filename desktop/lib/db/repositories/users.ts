@@ -77,3 +77,42 @@ export async function updateOnboardingByClerkId(
 
   return getUserByClerkId(clerkId);
 }
+
+export async function updateProfileSettings(
+  clerkId: string,
+  payload: {
+    displayName?: string;
+    bio?: string;
+    avatarUrl?: string;
+    privacyLevel?: "public" | "friends" | "private";
+    interestSlugs?: string[];
+  },
+) {
+  const db = getDb();
+  if (!db) return null;
+  const user = await getUserByClerkId(clerkId);
+  if (!user) return null;
+
+  const normalizedInterestSlugs =
+    payload.interestSlugs !== undefined
+      ? [...new Set(payload.interestSlugs.map((s) => s.trim().toLowerCase()).filter(Boolean))].slice(0, 12)
+      : undefined;
+
+  await db
+    .update(users)
+    .set({
+      displayName: payload.displayName ?? user.displayName ?? undefined,
+      bio: payload.bio ?? user.bio ?? undefined,
+      avatarUrl: payload.avatarUrl ?? user.avatarUrl ?? undefined,
+      privacyLevel: payload.privacyLevel ?? user.privacyLevel,
+      interestsSummary: normalizedInterestSlugs ?? user.interestsSummary,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, user.id));
+
+  if (normalizedInterestSlugs !== undefined) {
+    await syncUserInterestSlugs(user.id, normalizedInterestSlugs);
+  }
+
+  return getUserByClerkId(clerkId);
+}

@@ -1,23 +1,50 @@
-import { desc, eq, lt } from "drizzle-orm";
+import { and, desc, eq, inArray, lt } from "drizzle-orm";
 
 import { getDb } from "@/lib/db/client";
 import { posts, users } from "@/lib/db/schema";
+import { getFollowingUserIds } from "./connections";
 
-export async function getFeedPage({ cursor, limit }: { cursor?: string; limit: number }) {
+export async function getFeedPage({
+  cursor,
+  limit,
+  filter = "all",
+  viewerUserId,
+}: {
+  cursor?: string;
+  limit: number;
+  filter?: "all" | "following";
+  viewerUserId?: string;
+}) {
   const db = getDb();
   if (!db) return null;
+
+  let authorFilter: ReturnType<typeof inArray> | undefined;
+  if (filter === "following" && viewerUserId) {
+    const followingIds = await getFollowingUserIds(viewerUserId);
+    const ids = followingIds ?? [];
+    if (ids.length === 0) {
+      return { posts: [], nextCursor: null };
+    }
+    authorFilter = inArray(posts.authorId, ids);
+  }
 
   const rows = await db
     .select({
       id: posts.id,
       content: posts.content,
       createdAt: posts.createdAt,
+      commentsCount: posts.commentsCount,
       author: users.displayName,
       authorUsername: users.username,
     })
     .from(posts)
     .innerJoin(users, eq(posts.authorId, users.id))
-    .where(cursor ? lt(posts.createdAt, new Date(cursor)) : undefined)
+    .where(
+      and(
+        cursor ? lt(posts.createdAt, new Date(cursor)) : undefined,
+        authorFilter,
+      ),
+    )
     .orderBy(desc(posts.createdAt))
     .limit(limit + 1);
 
@@ -31,6 +58,7 @@ export async function getFeedPage({ cursor, limit }: { cursor?: string; limit: n
       content: row.content,
       author: row.author ?? "Vyb Member",
       authorUsername: row.authorUsername,
+      commentsCount: row.commentsCount,
       createdAt: row.createdAt.toISOString(),
     })),
     nextCursor,
