@@ -18,21 +18,35 @@ Default URL (already in `.env.local` template):
 
 `postgresql://vyb:vyb@localhost:5432/vyb`
 
-## Option B — Neon (free cloud, no Docker)
+## Option B — Neon (free cloud, no Docker) ← you chose this
 
-1. Create a project at [neon.tech](https://neon.tech).
-2. Copy the **connection string** (pooled or direct).
-3. Paste into `.env.local`:
+1. Sign up / sign in at [console.neon.tech](https://console.neon.tech).
+2. **New project** → name it `vyb` (any region is fine).
+3. On the project dashboard, click **Connect**.
+4. Copy the **direct** connection string (not “Pooled”):
+   - Host looks like `ep-xxxx.region.aws.neon.tech` (no `-pooler` in the name).
+   - Ensure the string includes `?sslmode=require` (Neon adds this by default).
+5. Paste into `desktop/.env.local`:
 
-   `DATABASE_URL=postgresql://...`
+   ```env
+   DATABASE_URL=postgresql://neondb_owner:****@ep-....aws.neon.tech/neondb?sslmode=require
+   ```
 
-4. Run:
+6. From `desktop/`:
 
    ```bash
    npm run db:check
    npm run db:migrate
    npm run db:seed
    ```
+
+**Why direct?** Drizzle migrations need a non-pooled connection. Your Next.js app can use the same URL for local dev, or the pooled URL later on Vercel if you prefer.
+
+**CLI alternative** (after `npx neonctl auth`):
+
+```bash
+npx neonctl connection-string --project-id <id> --database-name neondb
+```
 
 ## Option C — Supabase
 
