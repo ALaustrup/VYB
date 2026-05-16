@@ -2,6 +2,8 @@ import { desc, eq, sql } from "drizzle-orm";
 
 import { getDb } from "@/lib/db/client";
 import { interests, posts, userInterests, users } from "@/lib/db/schema";
+import { getUserByClerkId } from "@/lib/db/repositories/users";
+import { areUsersConnected, canViewProfileContent } from "@/lib/privacy/access";
 
 const PROFILE_POST_LIMIT = 20;
 
@@ -43,9 +45,13 @@ export async function getPublicProfile(usernameParam: string, viewerClerkId: str
   if (!row) return { error: "not_found" as const };
 
   const isViewerOwner = Boolean(viewerClerkId && viewerClerkId === row.clerkId);
+  const viewer = viewerClerkId ? await getUserByClerkId(viewerClerkId) : null;
+  const isConnected = viewer ? await areUsersConnected(viewer.id, row.id) : false;
 
-  if (row.privacyLevel === "private" && !isViewerOwner) {
-    return { error: "private" as const };
+  if (
+    !canViewProfileContent(row.privacyLevel, isViewerOwner, isConnected)
+  ) {
+    return { error: row.privacyLevel === "friends" ? ("friends_only" as const) : ("private" as const) };
   }
 
   const interestRows = await db

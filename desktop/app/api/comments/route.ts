@@ -5,6 +5,7 @@ import { z } from "zod";
 import { ensureCurrentUserSynced } from "@/lib/auth/ensure-user";
 import { createComment, listCommentsForPost } from "@/lib/db/repositories/comments";
 import { getUserByClerkId } from "@/lib/db/repositories/users";
+import { createNotification } from "@/lib/notifications/create";
 import { rateLimit } from "@/lib/rate-limit";
 
 const getSchema = z.object({
@@ -72,6 +73,16 @@ export async function POST(request: Request) {
   }
   if (!("data" in result)) {
     return NextResponse.json({ ok: false, error: "Unexpected" }, { status: 500 });
+  }
+
+  if (result.postAuthorId !== user.id) {
+    await createNotification({
+      userId: result.postAuthorId,
+      type: "comment",
+      title: "New comment on your post",
+      body: parsed.data.content.slice(0, 120),
+      metadata: { postId: parsed.data.postId, commentId: result.data.id },
+    });
   }
 
   return NextResponse.json({ ok: true, data: result.data }, { status: 201 });

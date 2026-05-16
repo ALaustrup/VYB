@@ -30,13 +30,18 @@ export default async function ProfilePage({ params }: PageProps) {
     if (result.error === "not_found") {
       notFound();
     }
-    if (result.error === "private") {
+    if (result.error === "private" || result.error === "friends_only") {
+      const isFriendsOnly = result.error === "friends_only";
       return (
         <section className="mx-auto max-w-xl p-8">
           <article className="glass-panel p-8 text-center">
-            <h1 className="text-xl font-semibold text-white">Private profile</h1>
+            <h1 className="text-xl font-semibold text-white">
+              {isFriendsOnly ? "Connections only" : "Private profile"}
+            </h1>
             <p className="mt-2 text-sm text-white/70">
-              This member only shares their full profile with people they choose.
+              {isFriendsOnly
+                ? "Follow this member to see their posts and full profile."
+                : "This member only shares their full profile with people they choose."}
             </p>
             <Link className="mt-6 inline-block text-sm text-white/85 underline" href="/explore">
               Explore others
@@ -45,9 +50,6 @@ export default async function ProfilePage({ params }: PageProps) {
         </section>
       );
     }
-  }
-
-  if (!("data" in result)) {
     notFound();
   }
 

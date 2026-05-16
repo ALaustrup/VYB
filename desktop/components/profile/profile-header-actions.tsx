@@ -3,11 +3,13 @@
 import Link from "next/link";
 
 import { FollowButton } from "./follow-button";
+import { MessageButton } from "./message-button";
 
 export function ProfileHeaderActions({ username, isOwner }: { username: string; isOwner: boolean }) {
   return (
     <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-white/10 pt-4">
       <FollowButton username={username} isOwner={isOwner} />
+      {!isOwner ? <MessageButton username={username} /> : null}
       {isOwner ? (
         <Link
           href="/settings/profile"

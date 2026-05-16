@@ -43,7 +43,11 @@ export async function createComment(input: {
   if (!db) return null;
 
   return db.transaction(async (tx) => {
-    const [post] = await tx.select({ id: posts.id }).from(posts).where(eq(posts.id, input.postId)).limit(1);
+    const [post] = await tx
+      .select({ id: posts.id, authorId: posts.authorId })
+      .from(posts)
+      .where(eq(posts.id, input.postId))
+      .limit(1);
     if (!post) return { error: "post_not_found" as const };
 
     const [inserted] = await tx
@@ -61,6 +65,6 @@ export async function createComment(input: {
       .set({ commentsCount: sql`${posts.commentsCount} + 1`, updatedAt: new Date() })
       .where(eq(posts.id, input.postId));
 
-    return { data: inserted };
+    return { data: inserted, postAuthorId: post.authorId };
   });
 }

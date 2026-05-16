@@ -11,6 +11,7 @@ import {
   unfollowUser,
 } from "@/lib/db/repositories/connections";
 import { getUserByClerkId } from "@/lib/db/repositories/users";
+import { createNotification } from "@/lib/notifications/create";
 
 const postSchema = z.object({
   username: z.string().min(1).max(40),
@@ -64,6 +65,15 @@ export async function POST(request: Request) {
     const result = await followUser(viewer.id, targetId);
     if (result && "error" in result && result.error === "self") {
       return NextResponse.json({ ok: false, error: "Cannot follow yourself" }, { status: 400 });
+    }
+    if (result && "ok" in result) {
+      await createNotification({
+        userId: targetId,
+        type: "follow",
+        title: "Someone followed you",
+        body: `${viewer.displayName ?? viewer.username} started following you`,
+        metadata: { fromUserId: viewer.id },
+      });
     }
   } else if (parsed.data.action === "unfollow") {
     await unfollowUser(viewer.id, targetId);

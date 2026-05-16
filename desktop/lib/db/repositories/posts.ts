@@ -2,6 +2,7 @@ import { and, desc, eq, inArray, lt } from "drizzle-orm";
 
 import { getDb } from "@/lib/db/client";
 import { posts, users } from "@/lib/db/schema";
+import { canViewProfileContent, getConnectedUserIds } from "@/lib/privacy/access";
 import { getFollowingUserIds } from "./connections";
 
 export async function getFeedPage({
@@ -28,14 +29,18 @@ export async function getFeedPage({
     authorFilter = inArray(posts.authorId, ids);
   }
 
+  const connectedIds = viewerUserId ? await getConnectedUserIds(viewerUserId) : new Set<string>();
+
   const rows = await db
     .select({
       id: posts.id,
       content: posts.content,
       createdAt: posts.createdAt,
       commentsCount: posts.commentsCount,
+      authorId: posts.authorId,
       author: users.displayName,
       authorUsername: users.username,
+      privacyLevel: users.privacyLevel,
     })
     .from(posts)
     .innerJoin(users, eq(posts.authorId, users.id))
@@ -46,10 +51,16 @@ export async function getFeedPage({
       ),
     )
     .orderBy(desc(posts.createdAt))
-    .limit(limit + 1);
+    .limit((limit + 1) * 4);
 
-  const hasMore = rows.length > limit;
-  const pageRows = hasMore ? rows.slice(0, limit) : rows;
+  const filtered = rows.filter((row) => {
+    const isOwner = viewerUserId ? row.authorId === viewerUserId : false;
+    const isConnected = connectedIds.has(row.authorId);
+    return canViewProfileContent(row.privacyLevel, isOwner, isConnected);
+  });
+
+  const hasMore = filtered.length > limit;
+  const pageRows = hasMore ? filtered.slice(0, limit) : filtered;
   const nextCursor = hasMore ? pageRows.at(-1)?.createdAt.toISOString() ?? null : null;
 
   return {

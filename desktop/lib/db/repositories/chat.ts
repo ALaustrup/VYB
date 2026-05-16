@@ -21,7 +21,27 @@ export async function listRoomsForUser(userId: string) {
     .where(inArray(chatRooms.id, roomIds))
     .orderBy(desc(chatRooms.updatedAt));
 
-  return rooms;
+  const enriched = [];
+  for (const room of rooms) {
+    const members = await db
+      .select({
+        userId: chatRoomMembers.userId,
+        displayName: users.displayName,
+        username: users.username,
+      })
+      .from(chatRoomMembers)
+      .innerJoin(users, eq(chatRoomMembers.userId, users.id))
+      .where(eq(chatRoomMembers.roomId, room.id));
+
+    const peer = members.find((m) => m.userId !== userId);
+    enriched.push({
+      ...room,
+      peerName: peer?.displayName ?? peer?.username ?? "Chat",
+      peerUsername: peer?.username ?? null,
+    });
+  }
+
+  return enriched;
 }
 
 export async function getOrCreateDirectRoom(userA: string, userB: string) {
@@ -100,7 +120,12 @@ export async function sendMessage(roomId: string, userId: string, content: strin
 
   await db.update(chatRooms).set({ updatedAt: new Date() }).where(eq(chatRooms.id, roomId));
 
-  return { data: msg };
+  const members = await db
+    .select({ userId: chatRoomMembers.userId })
+    .from(chatRoomMembers)
+    .where(eq(chatRoomMembers.roomId, roomId));
+
+  return { data: msg, recipientIds: members.map((m) => m.userId).filter((id) => id !== userId) };
 }
 
 export async function isRoomMember(roomId: string, userId: string) {

@@ -76,19 +76,12 @@ export default function EventsPage() {
                   View on map
                 </a>
               ) : null}
-              <button
-                type="button"
-                className="mt-3 rounded-full border border-white/25 px-3 py-1 text-xs text-white/85"
-                onClick={() =>
-                  fetch(`/api/events/${ev.id}/rsvp`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ status: "going" }),
-                  })
-                }
+              <Link
+                href={`/events/${ev.id}`}
+                className="mt-3 inline-block rounded-full border border-white/25 px-3 py-1 text-xs text-white/85"
               >
-                RSVP
-              </button>
+                View details
+              </Link>
             </li>
           ))}
         </ul>

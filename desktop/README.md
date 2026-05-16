@@ -14,6 +14,10 @@ Desktop-first Vyb platform foundation built with Next.js + Tauri for Linux, macO
 
 ```bash
 npm install
+cp .env.example .env.local
+npm run verify:env
+npm run db:migrate
+npm run db:seed
 npm run dev
 ```
 
@@ -62,6 +66,7 @@ Copy `.env.example` to `.env.local` and provide values:
 
 ## Docs
 
+- `docs/SETUP.md` — env, migrate, Clerk webhook, Vercel preview
 - `docs/architecture.md`
 - `docs/threat-model.md`
 - `docs/decision-log.md`

@@ -14,7 +14,9 @@ export default function ChatPage() {
     queryFn: async () => {
       const res = await fetch("/api/chat/rooms");
       if (!res.ok) throw new Error("Failed");
-      return (await res.json()) as { data: Array<{ id: string; type: string }> };
+      return (await res.json()) as {
+        data: Array<{ id: string; type: string; peerName?: string; peerUsername?: string | null }>;
+      };
     },
   });
 
@@ -53,7 +55,10 @@ export default function ChatPage() {
         {(rooms.data?.data ?? []).map((room) => (
           <li key={room.id}>
             <Link href={`/chat/${room.id}`} className="glass-panel block p-4 text-sm text-white/85">
-              {room.type === "direct" ? "Direct chat" : "Group"} · {room.id.slice(0, 8)}
+              {room.peerName ?? (room.type === "direct" ? "Direct chat" : "Group")}
+              {room.peerUsername ? (
+                <span className="block text-xs text-white/50">@{room.peerUsername}</span>
+              ) : null}
             </Link>
           </li>
         ))}

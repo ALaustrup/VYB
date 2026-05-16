@@ -2,7 +2,9 @@
 
 import { UserButton, useUser } from "@clerk/nextjs";
 import Link from "next/link";
-import { Calendar, Compass, Home, MessageCircle, Minus, Square, UserCircle, X } from "lucide-react";
+import { Calendar, Compass, Home, MessageCircle, UserCircle } from "lucide-react";
+
+import { WindowControls } from "@/components/desktop/window-controls";
 
 export function DesktopTitleBar() {
   const { isSignedIn, user } = useUser();
@@ -62,17 +64,7 @@ export function DesktopTitleBar() {
         {isSignedIn ? (
           <UserButton appearance={{ elements: { avatarBox: "h-8 w-8" } }} />
         ) : null}
-        <div className="flex items-center gap-1">
-        <button aria-label="Minimize" className="window-btn">
-          <Minus className="h-3.5 w-3.5" />
-        </button>
-        <button aria-label="Maximize" className="window-btn">
-          <Square className="h-3.5 w-3.5" />
-        </button>
-        <button aria-label="Close" className="window-btn window-btn-danger">
-          <X className="h-3.5 w-3.5" />
-        </button>
-        </div>
+        <WindowControls />
       </div>
     </header>
   );

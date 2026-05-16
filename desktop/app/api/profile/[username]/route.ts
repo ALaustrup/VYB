@@ -27,6 +27,9 @@ export async function GET(
     if (result.error === "private") {
       return NextResponse.json({ ok: false, error: "private_profile" }, { status: 403 });
     }
+    if (result.error === "friends_only") {
+      return NextResponse.json({ ok: false, error: "friends_only" }, { status: 403 });
+    }
   }
 
   if (!("data" in result)) {

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { ensureCurrentUserSynced } from "@/lib/auth/ensure-user";
 import { isRoomMember, listMessages, sendMessage } from "@/lib/db/repositories/chat";
 import { getUserByClerkId } from "@/lib/db/repositories/users";
+import { createNotification } from "@/lib/notifications/create";
 import { rateLimit } from "@/lib/rate-limit";
 
 const getSchema = z.object({
@@ -70,5 +71,16 @@ export async function POST(request: Request) {
   if ("error" in result) {
     return NextResponse.json({ ok: false, error: result.error }, { status: 403 });
   }
+
+  for (const recipientId of result.recipientIds ?? []) {
+    await createNotification({
+      userId: recipientId,
+      type: "message",
+      title: "New message",
+      body: parsed.data.content.slice(0, 120),
+      metadata: { roomId: parsed.data.roomId },
+    });
+  }
+
   return NextResponse.json({ ok: true, data: result.data }, { status: 201 });
 }

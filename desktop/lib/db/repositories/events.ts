@@ -118,6 +118,40 @@ export async function rsvpEvent(eventId: string, userId: string, status: "going"
   return { ok: true };
 }
 
+export async function listEventAttendees(eventId: string) {
+  const db = getDb();
+  if (!db) return null;
+
+  const rows = await db
+    .select({
+      status: eventAttendees.status,
+      displayName: users.displayName,
+      username: users.username,
+      userId: users.id,
+    })
+    .from(eventAttendees)
+    .innerJoin(users, eq(eventAttendees.userId, users.id))
+    .where(eq(eventAttendees.eventId, eventId));
+
+  return rows.map((r) => ({
+    userId: r.userId,
+    username: r.username,
+    displayName: r.displayName ?? r.username,
+    status: r.status,
+  }));
+}
+
+export async function getViewerRsvp(eventId: string, userId: string) {
+  const db = getDb();
+  if (!db) return null;
+  const [row] = await db
+    .select({ status: eventAttendees.status })
+    .from(eventAttendees)
+    .where(and(eq(eventAttendees.eventId, eventId), eq(eventAttendees.userId, userId)))
+    .limit(1);
+  return row?.status ?? null;
+}
+
 export async function getEventById(eventId: string) {
   const db = getDb();
   if (!db) return null;
