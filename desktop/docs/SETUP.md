@@ -8,11 +8,13 @@ cp .env.example .env.local
 npm run verify:env
 ```
 
-Required: `DATABASE_URL`, Clerk publishable + secret keys.
+Required: `DATABASE_URL`.
 
-Recommended: Clerk webhook secret, Supabase URL/anon key (chat Realtime), Upstash Redis (rate limits).
+Recommended: Clerk publishable + secret keys, Clerk webhook secret, Supabase URL/anon key (chat Realtime), Upstash Redis (rate limits).
 
 ## 2. Database
+
+See [DATABASE.md](./DATABASE.md) for **Neon** (cloud) or Docker (local).
 
 **Local Postgres (Docker):**
 
@@ -25,13 +27,22 @@ npm run db:seed
 
 Set `DATABASE_URL=postgresql://vyb:vyb@localhost:5432/vyb` in `.env.local` (default in template after `cp .env.example`).
 
-## 3. Clerk webhook
+## 3. Clerk
 
-In Clerk Dashboard → Webhooks, point to:
+Add to `.env.local`:
+
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+- `CLERK_SECRET_KEY`
+
+**Local dev without webhooks:** the app calls `ensureCurrentUserSynced()` on protected APIs, so sign-in + first feed/onboarding request creates your row in Postgres.
+
+**Production / optional local webhooks:** Clerk Dashboard → Webhooks → endpoint:
 
 `https://<your-host>/api/webhooks/clerk`
 
-Events: `user.created`, `user.updated`, `user.deleted`. Set `CLERK_WEBHOOK_SECRET` in `.env.local`.
+Events: `user.created`, `user.updated`. Copy the signing secret to `CLERK_WEBHOOK_SECRET`.
+
+For localhost webhooks, use [ngrok](https://ngrok.com) or Clerk’s tunnel, e.g. `ngrok http 3000` and use the HTTPS URL above.
 
 ## 4. Local run
 
