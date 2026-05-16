@@ -32,9 +32,18 @@ Default URL (already in `.env.local` template):
    DATABASE_URL=postgresql://neondb_owner:****@ep-....aws.neon.tech/neondb?sslmode=require
    ```
 
-6. From `desktop/`:
+6. Create a dedicated database (if `neondb` already has other tables):
 
    ```bash
+   npx neonctl databases create --project-id <your-project-id> --name vyb
+   ```
+
+   Use the connection string with `/vyb` as the database name.
+
+7. Enable pgvector (required for the `posts.embedding` column), then migrate:
+
+   ```bash
+   npx tsx scripts/db-enable-pgvector.ts
    npm run db:check
    npm run db:migrate
    npm run db:seed

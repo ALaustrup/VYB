@@ -24,7 +24,8 @@
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:setup": "npm run db:up && npm run db:migrate && npm run db:seed",
-    "db:check": "tsx scripts/check-db.ts"
+    "db:check": "tsx scripts/check-db.ts",
+    "db:pgvector": "tsx scripts/db-enable-pgvector.ts"
   },
   "lint-staged": {
     "*.{ts,tsx,js,mjs,json,css,md}": [
